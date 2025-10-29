@@ -1,6 +1,6 @@
 import React from 'react'
 
-const loader = () => {
+const Login = () => {
   return (
     <div>
       
@@ -8,4 +8,4 @@ const loader = () => {
   )
 }
 
-export default loader
+export default Login
