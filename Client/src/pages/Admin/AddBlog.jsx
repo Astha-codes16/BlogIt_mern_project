@@ -2,7 +2,11 @@ import React, { useEffect, useState } from 'react'
 import { assets, blogCategories } from '../../assets/assets'
 import { useRef } from 'react';
 import Quill from 'quill';
+import { useAppContext } from '../../context/AppContext';
+import toast from 'react-hot-toast';
 const AddBlog = () => {
+  const {axios}=useAppContext()
+  const [isAdding,setIsadding]=useState(false);
   const [image,setImage]=useState(false);
   const [title,setTitle]=useState('');
   const [subtitle,setSubtitle]=useState('');
@@ -14,7 +18,37 @@ const AddBlog = () => {
 
   }
   const onSubmitHandler=async(e)=>{
-e.preventDefault();
+    try {
+      e.preventDefault();
+      setIsadding(true);
+      const blog={
+        title,subtitle,
+        description:quillRef.current.root.innerHTML,
+        category,isPublished
+      }
+      const formData=new FormData();
+      formData.append('blog',JSON.stringify(blog))
+      formData.append('image',image)
+      const {data}=await axios.post('/api/blog/add',formData);
+      if(data.success)
+      {
+        toast.success(data.message);
+        setImage(false);
+        setTitle('');
+        setSubtitle('');
+        quillRef.current.root.innerHTML=''
+        setCategory('Startup');
+      }
+      else{
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error.message)
+    }
+    finally{
+      setIsadding(false)
+    }
+
   }
   useEffect(()=>{
   //initiate Quill only once
@@ -45,9 +79,10 @@ e.preventDefault();
 </div>
 <p className='mt-4'>Blog Category</p>
 <select onChange={e=>setCategory(e.target.value)}name="category"  className='mt-2 px-3 py-2 border text-gray-500 border-gray-300 outline-none rounded'>
-  <option value="">Select Caitegory</option>
+  <option value="">Select Category</option>
   {blogCategories.map((item,index)=>{
-    return <option key={index} value={item}></option>
+    return <option key={index} value={item}>{item}</option>
+
 
   })}
 </select>
@@ -57,7 +92,7 @@ e.preventDefault();
     setisPublished(e.target.checked)
   }}/>
 </div>
-<button type="submit" className='flex items-center gap-2 rounded text-sm mt-4  bg-primary text-white px-10 py-2.5 cursor-pointer'>Add Blog</button>
+<button disabled={isAdding} type="submit" className='flex items-center gap-2 rounded text-sm mt-4  bg-primary text-white px-10 py-2.5 cursor-pointer'>{isAdding?'Adding':'Add Blog'}</button>
  </div>
      </form>
   )
