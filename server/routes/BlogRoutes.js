@@ -11,7 +11,7 @@ blogRouter.get("/:blogid",getBlogById);
 blogRouter.post("/delete",auth,deleteBlogById);
 blogRouter.post("/togglePublish",auth,togglePublish);
 blogRouter.post("/addComment",addComment);
-blogRouter.get("/getBlogComment",getBlogcomments);
+blogRouter.post("/getBlogComment",getBlogcomments);
 //also we will create an auto middleware so that only admin can add blog 
 export default blogRouter;
 //now we will add it in our main file wiz server.jsnpm 
