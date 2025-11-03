@@ -149,7 +149,7 @@ export const deleteBlogById=async(req,res)=>{
     export const getBlogcomments=async(req,res)=>{
         try {
             const {blog}=req.body;
-            const comments=await commentmodel.find({blog:blogId,isApproved:true}).sort({createdAt:-1});
+            const comments=await commentmodel.find({blog:blog,isApproved:true}).sort({createdAt:-1});
             res.json({success:true,comments})   
         } catch (error) {
           res.json({ success: false, message: error.message });

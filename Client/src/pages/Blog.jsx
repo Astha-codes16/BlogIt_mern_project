@@ -26,10 +26,11 @@ const Blog = () => {
   }
   const fetchComments=async()=>{
 try {
-  const {data}=await axios.post('/api/blog/getBlogcomments',{blog:id})
+  const {data}=await axios.post('/api/blog/getBlogComment',{blog:id})
   if (data.success)
   {
-    setcomments(data.comments)
+    setcomments(data.comments);
+    console.log("Fetched Comments:", data.comments);
   }
   else
   {
