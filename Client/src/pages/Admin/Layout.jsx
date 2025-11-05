@@ -3,6 +3,7 @@ import { assets } from '../../assets/assets'
 import {  Outlet } from 'react-router-dom'  // ✅ import Outlet
 import Sidebar from './Sidebar'
 import { useAppContext } from '../../context/AppContext';
+import finall_logo from '../../components/finall_logo.png';
 const Layout = () => {
      // ✅ lowercase by convention
   const {axios,setToken,navigate}=useAppContext();
@@ -19,7 +20,7 @@ const Layout = () => {
       {/* Header */}
       <div className='flex  items-center  justify-between p-4 '>
         <img 
-          src={assets.logo} 
+          src={finall_logo} 
           alt="Logo" 
           className='w-32 sm:w-40 cursor-pointer' 
           onClick={() => navigate('/')} 

@@ -4,9 +4,11 @@ import { useRef } from 'react';
 import Quill from 'quill';
 import { useAppContext } from '../../context/AppContext';
 import toast from 'react-hot-toast';
+import {parse} from 'marked';
 const AddBlog = () => {
   const {axios}=useAppContext()
   const [isAdding,setIsadding]=useState(false);
+  const [isLoading,setLoading]=useState(false);
   const [image,setImage]=useState(false);
   const [title,setTitle]=useState('');
   const [subtitle,setSubtitle]=useState('');
@@ -14,8 +16,29 @@ const AddBlog = () => {
   const [category,setCategory]=useState('Startup');
   const editorRef=useRef(null);
   const quillRef=useRef(null);
+ 
   const GenerateContent=async()=>{
-
+if(!title)
+{
+  return toast.error('Please Enter a title')
+}
+try {
+  setLoading(true);
+  const {data}=await axios.post('/api/blog/generate',{prompt:title})
+  if(data.success)
+{
+  quillRef.current.root.innerHTML=parse(data.content)
+}
+else{
+  toast.error(data.message)
+}
+} catch (error) {
+  toast.error(error.message)
+}
+finally{
+  //after generating data it will set the loading to false
+  setLoading(false);
+}
   }
   const onSubmitHandler=async(e)=>{
     try {
@@ -75,7 +98,14 @@ const AddBlog = () => {
  <p className='mt-4'>Blog Description</p>
 <div className='max-w-lg h-74 pb-16 sm:pb-10 pt-2 relative'>
   <div ref={editorRef}></div>
-   <button type='button' onClick={GenerateContent} className='absolute bottom-1 right-2  text-xs text-white bg-black/70 px-4 py-1.5 rounded hover:underline cusor-pointer' >Generate with AI</button>
+  {isLoading && (<div className='absolute right-0 top-0 bottom-0 left-0  flex items-center justify-center bg-black/10 mt-2'>
+  {/* //spinning animation */}
+  <div className='w-8 h-8  rounded-full border-2 border-t-white animate-spin'>
+    
+
+  </div>
+    </div>)}
+   <button type='button' disabled={isLoading} onClick={GenerateContent} className='absolute bottom-1 right-2  text-xs text-white bg-black/70 px-4 py-1.5 rounded hover:underline cusor-pointer' >Generate with AI</button>
 </div>
 <p className='mt-4'>Blog Category</p>
 <select onChange={e=>setCategory(e.target.value)}name="category"  className='mt-2 px-3 py-2 border text-gray-500 border-gray-300 outline-none rounded'>
