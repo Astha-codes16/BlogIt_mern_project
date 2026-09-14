@@ -10,8 +10,8 @@ The project also integrates **Gemini AI** for assisting with blog content genera
 
 ### Demo Admin Account
 
-- **Email:** demo@123
-- **Password:** demo123
+- **Email:** asthatanwar@123
+- **Password:** asthatanwar
   
 ## Why I Built This
 
