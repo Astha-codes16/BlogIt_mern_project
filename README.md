@@ -4,6 +4,15 @@ BlogIt is a full-stack blogging platform I built using the **MERN stack**. It st
 
 The project also integrates **Gemini AI** for assisting with blog content generation and **Cloudinary** for image storage.
 
+## Live Demo
+
+**Website:** [https://blog-it-fawn-nu.vercel.app/]
+
+### Demo Admin Account
+
+- **Email:** demo@123
+- **Password:** demo123
+  
 ## Why I Built This
 
 I wanted to understand what goes into building a complete application rather than just creating individual frontend or backend features.
