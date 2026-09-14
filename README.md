@@ -259,7 +259,7 @@ Another important lesson was separating **authentication from authorization**. K
 
 I also learned the importance of keeping secrets out of source code after dealing with environment variables, API keys, and deployment configuration.
 
-## 💡 Key Design Decisions
+## Key Design Decisions
 
 ### Autosave vs Version History
 
@@ -296,10 +296,6 @@ Some improvements I would like to add next:
 * Scheduled publishing
 * Blog analytics
 * Improved search and recommendations
-
-## 📸 Screenshots
-
-Screenshots of the application can be added here as the project UI evolves.
 
 ## What I Built Beyond the Basic Blog
 
