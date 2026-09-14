@@ -8,6 +8,7 @@ const blogSchema=new mongoose.Schema({
     category:{type:String,required:true},
     image:{type:String,required:true},
     isPublished:{type:Boolean,required:true},
+    author:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:false},
 
 //this timestamps will automatically get the current data and time
 },{timestamps:true})
