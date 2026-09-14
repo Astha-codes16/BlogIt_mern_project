@@ -2,12 +2,12 @@
 // Create a Model class called Blog that interacts with the MongoDB collection named blogs."
 import mongoose, { Mongoose } from "mongoose";
 const blogSchema=new mongoose.Schema({
-    title:{type:String,required:true},
+    title:{type:String},
     subtitle:{type:String},
-    description:{type:String,required:true},
-    category:{type:String,required:true},
-    image:{type:String,required:true},
-    isPublished:{type:Boolean,required:true},
+    description:{type:String},
+    category:{type:String},
+    image:{type:String},
+    isPublished:{type:Boolean,default:false},
     author:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:false},
 
 //this timestamps will automatically get the current data and time

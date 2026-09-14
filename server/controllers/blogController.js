@@ -1,8 +1,10 @@
 import fs from 'fs';
 import cloudinary from '../configs/cloudinary.js'; // ⬅️ NEW IMPORT
 import Blog from '../models/blog.js';
+import BlogVersion from '../models/blogVersion.js';
 import commentmodel from '../models/comment.js';
 import main from '../configs/GEMINI.js';
+import { canManageBlog } from '../middleware/authorize.js';
 export const addBlog = async (req, res) => {
     try {
         if(typeof req.body?.blog !== 'string'){
@@ -94,6 +96,22 @@ export const addBlog = async (req, res) => {
         });
     }
 }
+export const createBlogDraft=async(req,res)=>{
+    try {
+        const createdBlog=await Blog.create({
+            author:req.user.id,
+            isPublished:false
+        });
+
+        return res.status(201).json({
+            success:true,
+            message:'Draft created successfully',
+            blog:createdBlog
+        });
+    } catch (error) {
+        return res.status(500).json({success:false,message:'Unable to create draft'});
+    }
+}
 export const updateBlog=async(req,res)=>{
     try {
         const {title,subtitle,description,category,isPublished}=req.body || {};
@@ -110,6 +128,108 @@ export const updateBlog=async(req,res)=>{
         res.json({success:true,message:'Blog updated successfully'});
     } catch (error) {
         res.status(500).json({success:false,message:'Unable to update blog'});
+    }
+}
+export const createBlogVersion=async(req,res)=>{
+    try {
+        const {id}=req.params;
+        if(!id){
+            return res.status(400).json({success:false,message:'Blog id is required'});
+        }
+
+        const blog=await Blog.findById(id);
+        if(!blog){
+            return res.status(404).json({success:false,message:'Blog not found'});
+        }
+
+        if(!canManageBlog(req.user,blog)){
+            return res.status(403).json({success:false,message:'You cannot modify this blog'});
+        }
+
+        const version=await BlogVersion.create({
+            blog:blog._id,
+            author:blog.author || req.user.id,
+            title:blog.title,
+            subtitle:blog.subtitle,
+            description:blog.description,
+            category:blog.category,
+            image:blog.image
+        });
+
+        return res.status(201).json({
+            success:true,
+            message:'Blog version created successfully',
+            version
+        });
+    } catch (error) {
+        if(error.name === 'CastError'){
+            return res.status(400).json({success:false,message:'Invalid blog id'});
+        }
+        return res.status(500).json({success:false,message:'Unable to create blog version'});
+    }
+}
+export const getBlogVersions=async(req,res)=>{
+    try {
+        const {id}=req.params;
+        if(!id){
+            return res.status(400).json({success:false,message:'Blog id is required'});
+        }
+
+        const blog=await Blog.findById(id);
+        if(!blog){
+            return res.status(404).json({success:false,message:'Blog not found'});
+        }
+
+        if(!canManageBlog(req.user,blog)){
+            return res.status(403).json({success:false,message:'You cannot view this blog history'});
+        }
+
+        const versions=await BlogVersion.find({blog:blog._id}).sort({createdAt:-1});
+        return res.status(200).json({success:true,versions});
+    } catch (error) {
+        if(error.name === 'CastError'){
+            return res.status(400).json({success:false,message:'Invalid blog id'});
+        }
+        return res.status(500).json({success:false,message:'Unable to load blog versions'});
+    }
+}
+// Autosaves the current draft without creating a BlogVersion snapshot.
+export const updateBlogDraft=async(req,res)=>{
+    try {
+        const {id}=req.params;
+        if(!id){
+            return res.status(400).json({success:false,message:'Blog id is required'});
+        }
+
+        const blog=await Blog.findById(id);
+        if(!blog){
+            return res.status(404).json({success:false,message:'Blog not found'});
+        }
+
+        if(!canManageBlog(req.user,blog)){
+            return res.status(403).json({success:false,message:'You cannot modify this blog'});
+        }
+
+        const allowedFields=['title','subtitle','description','category','image','isPublished'];
+        const body=req.body || {};
+        for(const field of allowedFields){
+            if(Object.prototype.hasOwnProperty.call(body,field) && body[field] !== undefined){
+                blog[field]=body[field];
+            }
+        }
+
+        await blog.save();
+
+        return res.status(200).json({
+            success:true,
+            message:'Draft saved successfully',
+            blog
+        });
+    } catch (error) {
+        if(error.name === 'CastError'){
+            return res.status(400).json({success:false,message:'Invalid blog id'});
+        }
+        return res.status(500).json({success:false,message:'Unable to save draft'});
     }
 }
 //function to get all blogs

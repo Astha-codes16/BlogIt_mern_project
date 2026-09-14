@@ -1,5 +1,13 @@
 import Blog from '../models/blog.js';
 
+export const canManageBlog=(user,blog)=>{
+    return user?.role === 'admin' || (
+        user?.role === 'author' &&
+        blog?.author &&
+        blog.author.toString() === user.id
+    );
+};
+
 const authorize=(...requiredRoles)=>{
     return (req,res,next)=>{
         if(!req.user || !requiredRoles.includes(req.user.role)){
@@ -22,7 +30,7 @@ export const authorizeBlogOwnership=(idSource='body')=>{
                 return res.status(404).json({success:false,message:'Blog not found'});
             }
 
-            if(req.user.role !== 'admin' && (!blog.author || blog.author.toString() !== req.user.id)){
+            if(!canManageBlog(req.user,blog)){
                 return res.status(403).json({success:false,message:'You cannot modify this blog'});
             }
 
