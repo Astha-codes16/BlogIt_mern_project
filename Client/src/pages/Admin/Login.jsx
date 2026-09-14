@@ -1,28 +1,34 @@
 import React from 'react'
-import  { useState } from 'react'
+import { useState } from 'react'
 import { useAppContext } from '../../context/AppContext'
-import toast from 'react-hot-toast';
+import toast from 'react-hot-toast'
 
 const Login = () => {
-  const {axios,setToken }=useAppContext(); 
+  const {axios,setToken,navigate}=useAppContext();
   const [email,setEmail]=useState('')
   const [password,setPassword]=useState('')
+  const [isSubmitting,setIsSubmitting]=useState(false)
+
   const handleSubmit=async(e)=>{
-e.preventDefault()
-try {
-  const {data}=await axios.post('/api/admin/login',{email,password})
-  if(data.success)
-  {
-    setToken(data.token)
-    localStorage.setItem('token',data.token)
-    axios.defaults.headers.common['Authorization']=data.token;
-  }
-  else{
-    toast.error(data.message)
-  }
-} catch (error) {
-  toast.error(error.message)
-}
+    e.preventDefault()
+    try {
+      setIsSubmitting(true)
+      const {data}=await axios.post('/api/admin/login',{email,password})
+      if(data.success)
+      {
+        setToken(data.token)
+        localStorage.setItem('token',data.token)
+        axios.defaults.headers.common['Authorization']=`Bearer ${data.token}`;
+        navigate('/admin')
+      }
+      else{
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
   return (
     <div className='flex items-center justify-center h-screen'>
@@ -43,8 +49,8 @@ try {
       type='password' required placeholder='Your Password' className='border-b-2 border-gray-300 p-2 outline-none mb-6'></input>
   </div>
   <div className="flex justify-center">
-  <button className=" w-full flex justify-center items-center gap-2 rounded text-sm bg-primary text-white px-10 py-3 my-5 cursor-pointer hover:bg-primary/90 transition-all">
-    Login
+  <button disabled={isSubmitting} className=" w-full flex justify-center items-center gap-2 rounded text-sm bg-primary text-white px-10 py-3 my-5 cursor-pointer hover:bg-primary/90 transition-all">
+    {isSubmitting?'Logging in':'Login'}
   </button>
 </div>
 

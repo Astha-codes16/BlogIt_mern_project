@@ -1,15 +1,28 @@
 import fs from 'fs';
 import cloudinary from '../configs/cloudinary.js'; // ⬅️ NEW IMPORT
 import Blog from '../models/blog.js';
+import BlogVersion from '../models/blogVersion.js';
 import commentmodel from '../models/comment.js';
 import main from '../configs/GEMINI.js';
+import { canManageBlog } from '../middleware/authorize.js';
 export const addBlog = async (req, res) => {
     try {
-        const {title, subtitle, description, category, isPublished} = JSON.parse(req.body.blog);
+        if(typeof req.body?.blog !== 'string'){
+            return res.status(400).json({success:false,message:'Blog data is required'});
+        }
+
+        let blogData;
+        try {
+            blogData=JSON.parse(req.body.blog);
+        } catch (error) {
+            return res.status(400).json({success:false,message:'Invalid blog data'});
+        }
+
+        const {title, subtitle, description, category, isPublished}=blogData;
         const imagefile = req.file;
 
         // 1. Initial Validation
-        if (!title || !description || !subtitle || !imagefile) {
+        if (!title || !description || !subtitle || !category || typeof isPublished !== 'boolean' || !imagefile) {
             return res.status(400).json({
                 success: false,
                 message: 'Missing required fields (title, description, subtitle, or image).'
@@ -42,7 +55,7 @@ export const addBlog = async (req, res) => {
         // --- END CLOUDINARY ---
 
         // 4. Database Save
-        await Blog.create({title, subtitle, description, category, image, isPublished});
+        await Blog.create({title, subtitle, description, category, image, isPublished, author:req.user.id});
         
         // 5. Success and File Cleanup (Crucial for Multer)
         if (req.file && req.file.path) {
@@ -83,6 +96,142 @@ export const addBlog = async (req, res) => {
         });
     }
 }
+export const createBlogDraft=async(req,res)=>{
+    try {
+        const createdBlog=await Blog.create({
+            author:req.user.id,
+            isPublished:false
+        });
+
+        return res.status(201).json({
+            success:true,
+            message:'Draft created successfully',
+            blog:createdBlog
+        });
+    } catch (error) {
+        return res.status(500).json({success:false,message:'Unable to create draft'});
+    }
+}
+export const updateBlog=async(req,res)=>{
+    try {
+        const {title,subtitle,description,category,isPublished}=req.body || {};
+        if(typeof title !== 'string' || typeof description !== 'string' || typeof category !== 'string' || typeof isPublished !== 'boolean'){
+            return res.status(400).json({success:false,message:'Invalid blog update data'});
+        }
+
+        req.blog.title=title;
+        req.blog.subtitle=subtitle;
+        req.blog.description=description;
+        req.blog.category=category;
+        req.blog.isPublished=isPublished;
+        await req.blog.save();
+        res.json({success:true,message:'Blog updated successfully'});
+    } catch (error) {
+        res.status(500).json({success:false,message:'Unable to update blog'});
+    }
+}
+export const createBlogVersion=async(req,res)=>{
+    try {
+        const {id}=req.params;
+        if(!id){
+            return res.status(400).json({success:false,message:'Blog id is required'});
+        }
+
+        const blog=await Blog.findById(id);
+        if(!blog){
+            return res.status(404).json({success:false,message:'Blog not found'});
+        }
+
+        if(!canManageBlog(req.user,blog)){
+            return res.status(403).json({success:false,message:'You cannot modify this blog'});
+        }
+
+        const version=await BlogVersion.create({
+            blog:blog._id,
+            author:blog.author || req.user.id,
+            title:blog.title,
+            subtitle:blog.subtitle,
+            description:blog.description,
+            category:blog.category,
+            image:blog.image
+        });
+
+        return res.status(201).json({
+            success:true,
+            message:'Blog version created successfully',
+            version
+        });
+    } catch (error) {
+        if(error.name === 'CastError'){
+            return res.status(400).json({success:false,message:'Invalid blog id'});
+        }
+        return res.status(500).json({success:false,message:'Unable to create blog version'});
+    }
+}
+export const getBlogVersions=async(req,res)=>{
+    try {
+        const {id}=req.params;
+        if(!id){
+            return res.status(400).json({success:false,message:'Blog id is required'});
+        }
+
+        const blog=await Blog.findById(id);
+        if(!blog){
+            return res.status(404).json({success:false,message:'Blog not found'});
+        }
+
+        if(!canManageBlog(req.user,blog)){
+            return res.status(403).json({success:false,message:'You cannot view this blog history'});
+        }
+
+        const versions=await BlogVersion.find({blog:blog._id}).sort({createdAt:-1});
+        return res.status(200).json({success:true,versions});
+    } catch (error) {
+        if(error.name === 'CastError'){
+            return res.status(400).json({success:false,message:'Invalid blog id'});
+        }
+        return res.status(500).json({success:false,message:'Unable to load blog versions'});
+    }
+}
+// Autosaves the current draft without creating a BlogVersion snapshot.
+export const updateBlogDraft=async(req,res)=>{
+    try {
+        const {id}=req.params;
+        if(!id){
+            return res.status(400).json({success:false,message:'Blog id is required'});
+        }
+
+        const blog=await Blog.findById(id);
+        if(!blog){
+            return res.status(404).json({success:false,message:'Blog not found'});
+        }
+
+        if(!canManageBlog(req.user,blog)){
+            return res.status(403).json({success:false,message:'You cannot modify this blog'});
+        }
+
+        const allowedFields=['title','subtitle','description','category','image','isPublished'];
+        const body=req.body || {};
+        for(const field of allowedFields){
+            if(Object.prototype.hasOwnProperty.call(body,field) && body[field] !== undefined){
+                blog[field]=body[field];
+            }
+        }
+
+        await blog.save();
+
+        return res.status(200).json({
+            success:true,
+            message:'Draft saved successfully',
+            blog
+        });
+    } catch (error) {
+        if(error.name === 'CastError'){
+            return res.status(400).json({success:false,message:'Invalid blog id'});
+        }
+        return res.status(500).json({success:false,message:'Unable to save draft'});
+    }
+}
 //function to get all blogs
 export const getAllBlogs=async(req,res)=>{
     try {
@@ -99,19 +248,22 @@ try {
     const blog=await Blog.findById(blogid)
     if(!blog)
     {
-        return res.json({success:false,message:"Blog Not found"})
+        return res.status(404).json({success:false,message:"Blog Not found"})
     }
     res.json({success:true,blog})
 } catch (error) {
-    res.json({ success: false, message: error.message }); 
+    if(error.name === 'CastError'){
+        return res.status(404).json({success:false,message:"Blog Not found"});
+    }
+    res.status(500).json({ success: false, message: "Unable to load blog" });
 }
 }
 //function to delete any blog
 export const deleteBlogById=async(req,res)=>{
     try {
         const {id}=req.body;
-        
-        await Blog.findByIdAndDelete(id);
+
+        await req.blog.deleteOne();
         //delete all commnets associated with this blog as well
         // "Go into the comments collection and delete every document where
         //  the blog field is equal to "60d5c0..."."
@@ -124,11 +276,9 @@ export const deleteBlogById=async(req,res)=>{
     //function to publish or not publish a blog
     export const togglePublish=async(req,res)=>{
         try {
-           const {id}=req.body;
-           const blog=await Blog.findById(id);
-           blog.isPublished=!blog.isPublished;
+           req.blog.isPublished=!req.blog.isPublished;
            //making the changes in data base as well
-           await blog.save();
+           await req.blog.save();
            res.json({success: true, message:'Blog status updated'})
         } catch (error) {
             res.json({ success: false, message: error.message }); 

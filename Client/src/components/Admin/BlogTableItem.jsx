@@ -6,7 +6,9 @@ const BlogTableItem = ({blog,fetchBlogs,index}) => {
  
     const {title,createdAt}=blog;
     const BlogDate=new Date(createdAt)
-    const {axios} =useAppContext();
+    const {axios,user}=useAppContext();
+    const blogAuthorId=typeof blog.author==='string' ? blog.author : blog.author?._id;
+    const canManage= user?.role==='admin' || (user?.role==='author' && blogAuthorId===user.id);
     const deleteBlog=async()=>{
     const confirm=window.confirm('Are you sure you want to delete this blog?')
     if(!confirm)
@@ -56,9 +58,9 @@ const BlogTableItem = ({blog,fetchBlogs,index}) => {
         <td className='px-2 py-4 max-sm:hidden'>{BlogDate.toLocaleString()}</td>
          <td className='px-2 py-4 max-sm:hidden'><p className={`${blog.isPublished?"text-green-600":"text-orange-700"}`}
          >{blog.isPublished ? "Published":"Unpublished"}</p></td>
-         <td className='px-2 py-4 flex text-xs gap-3'>
-            <button onClick={togglePublish} className='border px-2 py-0.5 mt-1 rounded cursor-pointer'>{blog.isPublished ? "Unpublish":"Publish"}</button>
-            <img src={assets.cross_icon}  className='w-8 hover:scale-110 transition-all cursor-pointer' alt="" onClick={deleteBlog} />
+        <td className='px-2 py-4 flex text-xs gap-3'>
+          {canManage && <button onClick={togglePublish} className='border px-2 py-0.5 mt-1 rounded cursor-pointer'>{blog.isPublished ? "Unpublish":"Publish"}</button>}
+          {canManage && <img src={assets.cross_icon}  className='w-8 hover:scale-110 transition-all cursor-pointer' alt="" onClick={deleteBlog} />}
          </td>
     </tr>
   )

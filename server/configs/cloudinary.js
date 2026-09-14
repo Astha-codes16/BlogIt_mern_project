@@ -1,30 +1,20 @@
-// configs/cloudinary.js
+import dotenv from 'dotenv';
+dotenv.config();
 
-import { v2 as cloudinary } from 'cloudinary';
-// import dotenv from 'dotenv'; // No longer needed for this test
+const {v2:cloudinary}=await import('cloudinary');
 
-// **PASTE YOUR ACTUAL CREDENTIALS HERE**
-const YOUR_API_KEY = "978665557765772";        // Example: 123456789012345
-const YOUR_API_SECRET = "pbBjUULTfA6gf68DG0z-WQ-AqGk";   // Example: abcdef1234567890
-const YOUR_CLOUD_NAME = "djghqq7xb";   // Example: my-blog-app
+const hasIndividualCredentials=process.env.CLOUDINARY_CLOUD_NAME &&
+	process.env.CLOUDINARY_API_KEY &&
+	process.env.CLOUDINARY_API_SECRET;
 
-// Configure Cloudinary using the individual credentials
-cloudinary.config({ 
-  cloud_name: "djghqq7xb",
-  api_key: "978665557765772",
-  api_secret: "pbBjUULTfA6gf68DG0z-WQ-AqGk"
-});
+if(hasIndividualCredentials){
+	cloudinary.config({
+		cloud_name:process.env.CLOUDINARY_CLOUD_NAME,
+		api_key:process.env.CLOUDINARY_API_KEY,
+		api_secret:process.env.CLOUDINARY_API_SECRET
+	});
+} else {
+	cloudinary.config();
+}
 
 export default cloudinary;
-// import { v2 as cloudinary } from 'cloudinary';
-// import dotenv from 'dotenv'; 
-
-// // CRITICAL: Ensure dotenv loads the variables BEFORE Cloudinary initializes
-// dotenv.config(); 
-
-// // Configure Cloudinary using the single CLOUDINARY_URL environment variable
-// cloudinary.config({ 
-//   cloudinary_url: process.env.CLOUDINARY_URL 
-// });
-
-// export default cloudinary;

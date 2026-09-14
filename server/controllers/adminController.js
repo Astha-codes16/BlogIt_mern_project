@@ -1,22 +1,32 @@
-import { json } from "express";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Blog from "../models/blog.js";
 import commentmodel from "../models/comment.js";
-const { JsonWebTokenError } = jwt;
+import User from "../models/user.js";
 
 export const adminLogin=async(req,res)=>{
  try {
-    const {email,password}=req.body;
-    if(email!=process.env.ADMIN_EMAIL  ||  password!=process.env.ADMIN_PASSWORD)
+   const {email,password}=req.body || {};
+      if(typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password)
     {
-        return res.json({success:false,message:"Invalid credentials"})
+            return res.status(400).json({success:false,message:"Email and password are required"})
     }
-    //we have created this token with email and secret password
-    const token=jwt.sign({email},process.env.JWT_SECRET)
-    //now we are sending this token as a response 
-    res.json({success:true,token})
+
+      const user=await User.findOne({email:email.trim().toLowerCase(),isActive:true}).select('+passwordHash');
+      const isPasswordValid=user && await bcrypt.compare(password,user.passwordHash);
+      if(!isPasswordValid)
+      {
+            return res.status(401).json({success:false,message:"Invalid credentials"})
+      }
+
+      const token=jwt.sign(
+         {id:user._id.toString(),email:user.email,role:user.role},
+         process.env.JWT_SECRET,
+         {expiresIn:process.env.JWT_EXPIRES_IN || '1h'}
+      );
+      res.json({success:true,token})
  } catch (error) {
-    res.json({success:false,message:error.message})
+      res.status(500).json({success:false,message:"Unable to complete login"})
  }
 }
 //admin can see all the blogs whether thay are published or unpublished

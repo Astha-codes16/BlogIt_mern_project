@@ -1,21 +1,23 @@
 import React from 'react'
-import { blog_data } from '../../assets/assets';
 import { useState } from 'react';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import BlogTableItem from '../../components/Admin/BlogTableItem';
 import { useAppContext } from '../../context/AppContext';
-import axios from 'axios';
 const ListBlog = () => {
     const [blogs,setBlogs]=useState([]);
-    const { axios } = useAppContext();
+    const { axios,user } = useAppContext();
     const fetchBlogs=async ()=>{
 try {
   //data is the data we are getting from the API 
-  const {data}=await axios.get('/api/admin/blogs')
+  const endpoint=user?.role==='admin' ? '/api/admin/blogs' : '/api/blog/all';
+  const {data}=await axios.get(endpoint)
   if(data.success)
   {
-    setBlogs(data.blogs)
+    const availableBlogs=user?.role==='author'
+      ? data.blogs.filter(blog=>blog.author===user.id || blog.author?._id===user.id)
+      : data.blogs;
+    setBlogs(availableBlogs)
   }
   else{
     toast.error(data.message)
@@ -26,7 +28,7 @@ try {
     }
     useEffect(()=>{
         fetchBlogs()
-    },[])
+    },[user])
   return (
     <div className='flex-1 pt-5 px-5 sm:pl-16 bg-blue-50/50'>
       <h1>All Blogs</h1>
