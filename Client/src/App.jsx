@@ -11,13 +11,13 @@ import Login from './pages/Admin/Login'
 import 'quill/dist/quill.snow.css'
 import {Toaster} from 'react-hot-toast'
 import { useAppContext } from './context/AppContext'
-
+import test from './pages/test'
 const App = () => {
   const {token}=useAppContext()
   return (
     <div>
       <Toaster/>
-      
+      <test/>
       <Routes>
         <Route path='/' element={<Home/>}/>
          <Route path='/test' element={<ListBlog/>}/>
