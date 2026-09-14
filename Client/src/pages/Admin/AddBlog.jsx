@@ -6,7 +6,7 @@ import { useAppContext } from '../../context/AppContext';
 import toast from 'react-hot-toast';
 import {parse} from 'marked';
 const AddBlog = () => {
-  const {axios,token}=useAppContext()
+  const {axios,token,user}=useAppContext()
   const [isAdding,setIsadding]=useState(false);
   const [isLoading,setLoading]=useState(false);
   const [saveStatus,setSaveStatus]=useState('idle');
@@ -272,7 +272,7 @@ finally{
 
   </div>
     </div>)}
-   <button type='button' disabled={isLoading} onClick={GenerateContent} className='absolute bottom-1 right-2  text-xs text-white bg-black/70 px-4 py-1.5 rounded hover:underline cusor-pointer' >Generate with AI</button>
+  {user?.role==='admin' && <button type='button' disabled={isLoading} onClick={GenerateContent} className='absolute bottom-1 right-2  text-xs text-white bg-black/70 px-4 py-1.5 rounded hover:underline cusor-pointer' >Generate with AI</button>}
 </div>
 {saveStatus==='saving' && <p className='text-xs text-gray-500'>Saving...</p>}
 {saveStatus==='saved' && <p className='text-xs text-green-600'>Draft saved ✓</p>}
